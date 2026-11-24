@@ -1,0 +1,34 @@
+# Залежності та збірки (відновлюються через npm install / npm run build)
+juice-shop/node_modules/
+juice-shop/frontend/node_modules/
+juice-shop/frontend/dist/
+juice-shop/frontend/.angular/
+juice-shop/build/
+juice-shop/dist/
+juice-shop/.git/
+
+# Дані середовища виконання
+juice-shop/data/*.sqlite
+juice-shop/*.sqlite
+juice-shop/logs/
+juice-shop/ftp/*.pdf
+
+# Інструменти та службові файли (поза репозиторієм цілі)
+tools/venv/
+tools/bin/
+scripts/
+report/build_docx.ref.js
+report/*.docx
+
+# Python
+__pycache__/
+*.pyc
+exploits/venv/
+
+# Згенеровані проміжні файли
+*.log
+
+# Службові файли завдання та тимчасові артефакти
+AGENTS.md
+scratchpad_test.*
+scratchpad_pdftest/
