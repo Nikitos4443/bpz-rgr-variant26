@@ -15,6 +15,11 @@ import { challenges } from '../data/datacache'
 export function retrieveBasket () {
   return (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id
+    // Контроль доступу: кошик може переглянути лише його власник.
+    if (!security.ownsBasket(req, id)) {
+      res.status(401).json({ error: 'Access to this basket is forbidden' })
+      return
+    }
     BasketModel.findOne({ where: { id }, include: [{ model: ProductModel, paranoid: false, as: 'Products' }] })
       .then((basket: BasketModel | null) => {
         /* jshint eqeqeq:false */

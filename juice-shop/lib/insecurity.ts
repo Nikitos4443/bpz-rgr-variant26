@@ -7,7 +7,7 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import { type Request, type Response, type NextFunction } from 'express'
 import { type UserModel } from 'models/user'
-import expressJwt from 'express-jwt'
+import { expressjwt } from 'express-jwt'
 import jwt from 'jsonwebtoken'
 import jws from 'jws'
 import sanitizeHtmlLib from 'sanitize-html'
@@ -20,7 +20,34 @@ import * as utils from './utils'
 import * as z85 from 'z85'
 
 export const publicKey = fs ? fs.readFileSync('encryptionkeys/jwt.pub', 'utf8') : 'placeholder-public-key'
-const privateKey = '-----BEGIN RSA PRIVATE KEY-----\r\nMIICXAIBAAKBgQDNwqLEe9wgTXCbC7+RPdDbBbeqjdbs4kOPOIGzqLpXvJXlxxW8iMz0EaM4BKUqYsIa+ndv3NAn2RxCd5ubVdJJcX43zO6Ko0TFEZx/65gY3BE0O6syCEmUP4qbSd6exou/F+WTISzbQ5FBVPVmhnYhG/kpwt/cIxK5iUn5hm+4tQIDAQABAoGBAI+8xiPoOrA+KMnG/T4jJsG6TsHQcDHvJi7o1IKC/hnIXha0atTX5AUkRRce95qSfvKFweXdJXSQ0JMGJyfuXgU6dI0TcseFRfewXAa/ssxAC+iUVR6KUMh1PE2wXLitfeI6JLvVtrBYswm2I7CtY0q8n5AGimHWVXJPLfGV7m0BAkEA+fqFt2LXbLtyg6wZyxMA/cnmt5Nt3U2dAu77MzFJvibANUNHE4HPLZxjGNXN+a6m0K6TD4kDdh5HfUYLWWRBYQJBANK3carmulBwqzcDBjsJ0YrIONBpCAsXxk8idXb8jL9aNIg15Wumm2enqqObahDHB5jnGOLmbasizvSVqypfM9UCQCQl8xIqy+YgURXzXCN+kwUgHinrutZms87Jyi+D8Br8NY0+Nlf+zHvXAomD2W5CsEK7C+8SLBr3k/TsnRWHJuECQHFE9RA2OP8WoaLPuGCyFXaxzICThSRZYluVnWkZtxsBhW2W8z1b8PvWUE7kMy7TnkzeJS2LSnaNHoyxi7IaPQUCQCwWU4U+v4lD7uYBw00Ga/xt+7+UqFPlPVdz1yyr4q24Zxaw0LgmuEvgU5dycq8N7JxjTubX0MIRR+G9fmDBBl8=\r\n-----END RSA PRIVATE KEY-----'
+const privateKey = `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC9V4a6whCsUKeL
+ROd1FwYkYD2T4wPqnbJSOmmKm/Z0UHQxxT+fYHWb1yL+cLbWgxbRA4NAShE5tyhu
+zf2l11HbTxliTDmxp8y/juMm13HITcgjaBVlIcyjJ+sDsvqSVlJy4mTrRTH9RrSX
+1WvzJ4NjUE5xWFVCI4hhqbrlugpPExmKxlApQWeFO+1QxmQxCUYE0oTsTeBWdc9j
+0rVZSyFxd7KVlNTpSqvw0EebvUpzUNKAgqUzN/WkApPiyGmhxnuPQ4urHe0srtO0
+uOTDjCKBhmwSOEbfNWT0WUM8l8+W4AJ15Q3Qu75/g9TUHEsccjxvA4ducaTHiaEL
+kPY+ZdWVAgMBAAECggEACc7WYlHk24rkBZarUglAHrNDjVJq+gTINMfk1AgciKLq
+70cTSCC5huSVN06ZvLFBWyYORE7HPKZMYw0ARiPKEDe1OL56a0WmGV1/+RublRop
+CLh+tI8/J/Z3Oej+tNo23s+eawIvGDpzkWfooHRcCHwjoW3HdivGsp8VrjUTDUx4
+/5MUFFFTLVM5bPQ4qcXXM3s56xEZC1LDDG3tt6PefyR0lTStg5Hc+dcWc8RiqRio
+y+NXMyyCpO4PcKsNUhjfbsmsXxQR2N/lbfMrROFXAmIN2zaIiK7TUpeE3FEaqU1h
+UoZTfzMjlQM1kU5XpKLs2isunCZ7zaDAhafGWsqIsQKBgQDi5yAdV6jIa+N0Tqi6
+qODu9tuYWtR0VYklZryrHravqpBfM4nTOJ3RXWdkW/wnAJuIvx8fSefR15EVxa/Y
+0Melb8dSULEpUFcb7mNpHs16YKM5QLcBGES2wLYTWRiWmEgRYKBdLpFAT42unzzN
+ANLWXu9ItTvuHrsE0MdJ+mFD/QKBgQDVn1UilqvmwEhkSFXe3xQR1IiiRMHeZFpX
+1DdfQnDkOKyApCTrBhKAVX6O5xx2wD3smNI0MT/qYR8OOkRkPRRJtmH1DTkttq7K
+wGtioRd/HU0BB0rSSPFb1iSBBzsUd06ik8SObwQdH/pg76rMXwUziCo0pNeoP3gx
+cgCVD1pveQKBgBDcZ/CGQQ6TpdVQuw0T25MmWO8bYMo8SPK0jbSRlbW8EPpiFA3U
+GTYjoLk+dKBZVTV2LlPe5BEd2bQqeoS8DvnmMoOVZ3TQeYij0FNRbKd5YuewPWkh
+aonCDEWny0H1kvVnnsMN4NFMmBSv1I7PTtuLNnDKtudc9TzIXubKakvpAoGBAKoG
+kTpgdh3JOVUoBcDICS9P3BhbZXreoNF7BT96oGPlf9c7zm6JfLxMT9jptcwGosLn
+t5b3BApGlvM6CSlHPBiXY0wp5DKwTlrt4Aq2cP8pkRqadUD98azIunFAEhPuCdZ4
+il9bmQidZSk2WNklX/xuCjmwYj11lvKz7Ca3+6DxAoGBAKo5BXAuAs5AiUNFGw1d
+qq7FYK9AYsvQ08NNYW3r9pLBJQplATlif6k19egOskN8K+Jg4mBM4Bjvg8ZZ/1cx
+ASUIo1Pnpki/wCumMBZdJCb4JuIKNIBuPyqFQUV5TpEKxKyNQC/JB7A641ZMtOTa
+CW1ZQxtL6Yf6+WzMY4TTz2ah
+-----END PRIVATE KEY-----`
 
 interface ResponseWithUser {
   status?: string
@@ -51,10 +78,18 @@ export const cutOffPoisonNullByte = (str: string) => {
   return str
 }
 
-export const isAuthorized = () => expressJwt(({ secret: publicKey }) as any)
-export const denyAll = () => expressJwt({ secret: '' + Math.random() } as any)
+// express-jwt 8.x: явно фіксуємо алгоритм RS256 (захист від alg:none та HS/RS-плутанини).
+export const isAuthorized = () => expressjwt({ secret: publicKey, algorithms: ['RS256'] })
+export const denyAll = () => expressjwt({ secret: '' + Math.random(), algorithms: ['HS256'] })
 export const authorize = (user = {}) => jwt.sign(user, privateKey, { expiresIn: '6h', algorithm: 'RS256' })
-export const verify = (token: string) => token ? (jws.verify as ((token: string, secret: string) => boolean))(token, publicKey) : false
+export const verify = (token: string) => {
+  // jws 4.x вимагає явного алгоритму; фіксуємо RS256 (захист від alg confusion / alg:none).
+  try {
+    return token ? (jws.verify as ((token: string, algorithm: string, secret: string) => boolean))(token, 'RS256', publicKey) : false
+  } catch {
+    return false
+  }
+}
 export const decode = (token: string) => { return jws.decode(token)?.payload }
 
 export const sanitizeHtml = (html: string) => sanitizeHtmlLib(html)
@@ -172,6 +207,24 @@ export const isDeluxe = (req: Request) => {
 export const isCustomer = (req: Request) => {
   const decodedToken = verify(utils.jwtFrom(req)) && decode(utils.jwtFrom(req))
   return decodedToken?.data?.role === roles.customer
+}
+
+// Middleware, що пропускає лише користувачів з роллю admin (для адмін-ендпоінтів).
+export const isAdmin = () => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = verify(utils.jwtFrom(req)) && decode(utils.jwtFrom(req))
+    if (decodedToken?.data?.role === roles.admin) {
+      next()
+    } else {
+      res.status(403).json({ error: 'Requires administrator privileges' })
+    }
+  }
+}
+
+// Перевірка, що кошик/ресурс із заданим basket id належить автентифікованому користувачу.
+export const ownsBasket = (req: Request, basketId: string | number) => {
+  const user = authenticatedUsers.from(req)
+  return !!(user?.bid) && String(user.bid) === String(basketId)
 }
 
 export const appendUserId = () => {

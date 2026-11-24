@@ -34,15 +34,18 @@ export function addBasketItem () {
     }
 
     const user = security.authenticatedUsers.from(req)
-    if (user && basketIds[0] && basketIds[0] !== 'undefined' && Number(user.bid) != Number(basketIds[0])) { // eslint-disable-line eqeqeq
+    // Контроль доступу: ЖОДЕН переданий BasketId не може відрізнятись від кошика
+    // автентифікованого користувача (захист від підміни кількома ключами BasketId).
+    const foreignBasket = basketIds.some((b) => b && b !== 'undefined' && Number(user?.bid) !== Number(b))
+    if (!user?.bid || foreignBasket) {
       res.status(401).send('{\'error\' : \'Invalid BasketId\'}')
     } else {
       const basketItem = {
         ProductId: productIds[productIds.length - 1],
-        BasketId: basketIds[basketIds.length - 1],
+        BasketId: user.bid, // кошик завжди береться з токена, а не з тіла запиту
         quantity: quantities[quantities.length - 1]
       }
-      challengeUtils.solveIf(challenges.basketManipulateChallenge, () => { return user && basketItem.BasketId && basketItem.BasketId !== 'undefined' && user.bid != basketItem.BasketId }) // eslint-disable-line eqeqeq
+      challengeUtils.solveIf(challenges.basketManipulateChallenge, () => { return !!(user?.bid && Number(user.bid) !== Number(basketItem.BasketId)) })
 
       const basketItemInstance = BasketItemModel.build(basketItem)
       basketItemInstance.save().then((addedBasketItem: BasketItemModel) => {

@@ -1,0 +1,62 @@
+digraph JuiceShopDFD {
+  // OWASP Juice Shop — Data Flow Diagram with trust boundaries (variant 26: broken access control)
+  rankdir=LR;
+  splines=true;
+  nodesep=0.55;
+  ranksep=0.95;
+  fontname="Helvetica";
+  fontsize=20;
+  labelloc="t";
+  label="Рисунок 1.1 — Діаграма потоків даних OWASP Juice Shop з межами довіри";
+  node [fontname="Helvetica", fontsize=16];
+  edge [fontname="Helvetica", fontsize=13, color="#333333"];
+
+  // ---------- External entities (rectangles) ----------
+  subgraph cluster_internet {
+    label="Межа довіри TB-1: Інтернет (неконтрольована зона)";
+    style="dashed,rounded"; color="#b00020"; fontcolor="#b00020"; fontsize=16; penwidth=2;
+    customer  [shape=box, style="filled", fillcolor="#e3f2fd", label="Клієнт-покупець\n(браузер)"];
+    attacker  [shape=box, style="filled", fillcolor="#ffebee", color="#b00020", label="Зловмисник\n(автентифікований\nкористувач)"];
+    admin     [shape=box, style="filled", fillcolor="#e3f2fd", label="Адміністратор\n(браузер)"];
+  }
+
+  // ---------- Presentation tier ----------
+  subgraph cluster_spa {
+    label="Межа довіри TB-2: Клієнтський застосунок (Angular SPA, браузер)";
+    style="dashed,rounded"; color="#1565c0"; fontcolor="#1565c0"; fontsize=16; penwidth=2;
+    spa [shape=ellipse, style="filled", fillcolor="#fff8e1", label="P1\nAngular SPA\n(маршрути, guard-и)"];
+  }
+
+  // ---------- Server tier ----------
+  subgraph cluster_server {
+    label="Межа довіри TB-3: Сервер застосунку (Node.js / Express, 127.0.0.1:3000)";
+    style="dashed,rounded"; color="#2e7d32"; fontcolor="#2e7d32"; fontsize=16; penwidth=2;
+
+    api   [shape=ellipse, style="filled", fillcolor="#e8f5e9", label="P2\nExpress REST API\n(routes/*, finale ORM)"];
+    authz [shape=ellipse, style="filled", fillcolor="#e8f5e9", label="P3\nАвторизація / JWT\n(lib/insecurity.ts)"];
+    ratelimit [shape=ellipse, style="filled", fillcolor="#e8f5e9", label="P4\nRate-limit\n(reset-password, 2FA)"];
+
+    subgraph cluster_data {
+      label="Межа довіри TB-4: Сховища даних";
+      style="dashed,rounded"; color="#6a1b9a"; fontcolor="#6a1b9a"; fontsize=15; penwidth=2;
+      sqlite  [shape=cylinder, style="filled", fillcolor="#f3e5f5", label="D1 SQLite\n(Users, Baskets,\nProducts, Orders)"];
+      mongo   [shape=cylinder, style="filled", fillcolor="#f3e5f5", label="D2 NoSQL\n(Product Reviews)"];
+      files   [shape=cylinder, style="filled", fillcolor="#f3e5f5", label="D3 Файли\n(/ftp, /uploads,\nencryptionkeys)"];
+    }
+  }
+
+  // ---------- Data flows ----------
+  customer -> spa   [label="DF1 HTTPS\nперегляд, вхід"];
+  admin    -> spa   [label="DF2 HTTPS\nадмін-дії"];
+  attacker -> api   [label="DF3 HTTP\nпрямі API-запити\n(в обхід SPA guard-ів)", color="#b00020", fontcolor="#b00020", penwidth=2];
+  spa:sw   -> api:nw [label="DF4 REST/JSON\n+ JWT Bearer"];
+  api      -> authz [label="DF5 перевірка\nтокена/ролі"];
+  authz    -> api   [label="DF6 рішення\nдоступу"];
+  api      -> ratelimit [label="DF7 облік спроб\n(X-Forwarded-For)"];
+  api      -> sqlite [label="DF8 SQL\n(Sequelize)"];
+  sqlite   -> api    [label="DF9 записи\n(кошик, профіль)"];
+  api      -> mongo  [label="DF10 CRUD відгуків"];
+  api      -> files  [label="DF11 читання/запис\nфайлів і ключів"];
+  api:ne   -> spa:se [label="DF12 JSON-\nвідповіді"];
+  spa      -> customer [label="DF13 рендер"];
+}

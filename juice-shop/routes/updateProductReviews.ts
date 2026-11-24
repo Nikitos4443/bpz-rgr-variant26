@@ -13,11 +13,17 @@ import * as db from '../data/mongodb'
 // vuln-code-snippet start noSqlReviewsChallenge forgedReviewChallenge
 export function updateProductReviews () {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = security.authenticatedUsers.from(req) // vuln-code-snippet vuln-line forgedReviewChallenge
-    db.reviewsCollection.update( // vuln-code-snippet neutral-line forgedReviewChallenge
-      { _id: req.body.id }, // vuln-code-snippet vuln-line noSqlReviewsChallenge forgedReviewChallenge
+    const user = security.authenticatedUsers.from(req)
+    // Контроль доступу: редагувати можна лише власний відгук (звіряємо автора),
+    // і лише один документ за точним _id (без multi, без NoSQL-оператора в _id).
+    if (!user?.data?.email) {
+      res.status(401).json({ error: 'Authentication required' })
+      return
+    }
+    db.reviewsCollection.update(
+      { _id: String(req.body.id), author: user.data.email },
       { $set: { message: req.body.message } },
-      { multi: true } // vuln-code-snippet vuln-line noSqlReviewsChallenge
+      { multi: false }
     ).then(
       (result: { modified: number, original: Array<{ author: any }> }) => {
         challengeUtils.solveIf(challenges.noSqlReviewsChallenge, () => { return result.modified > 1 }) // vuln-code-snippet hide-line

@@ -1,0 +1,15 @@
+# Gitleaks config — скан вихідного коду Juice Shop (без скомпільованих/вендорних каталогів)
+title = "Juice Shop source secret scan"
+[extend]
+useDefault = true
+[allowlist]
+description = "Виключення скомпільованих та вендорних каталогів, що дублюють вихідний код"
+paths = [
+  '''build/''',
+  '''node_modules/''',
+  '''frontend/node_modules/''',
+  '''frontend/dist/''',
+  '''dist/''',
+  '''\.angular/''',
+  '''\.map$''',
+]
